@@ -1,6 +1,6 @@
 # CNC-Pendant-Firmware
 
-This is firmware to run on an Arduino Nano to interface a populate style of wired CNC pendant to the PanelDue port of Duet electronics. 
+This is firmware to run on an Arduino Nano to interface a populate style of wired CNC pendant to the PanelDue port of Duet electronics. Build it using Arduino. 
 
 Pendant to Arduino Nano connections:
 

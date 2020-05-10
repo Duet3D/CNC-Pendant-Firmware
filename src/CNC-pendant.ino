@@ -137,7 +137,7 @@ void loop()
       if (axis >= 0 && distance != 0)
       {
         whenLastCommandSent = now;
-        Serial.write("G91 G0 ");
+        Serial.write(MoveCommands[axis]);
         Serial.print(distance);
         Serial.write('\n');
       }

@@ -4,6 +4,7 @@ This is firmware to run on an Arduino Nano to interface a populate style of wire
 
 Pendant to Arduino Nano connections:
 
+```
 Nano    Pendant   Wire colours
 +5V     +5V       red
 GND     0V,       black
@@ -34,3 +35,4 @@ Nano    Duet
 +5V     +5V
 GND     GND
 TX1/D0  Through 6K8 resistor to URXD, also connect 10K resistor between URXD and GND
+```

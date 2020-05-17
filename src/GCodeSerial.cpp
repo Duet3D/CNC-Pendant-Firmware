@@ -24,7 +24,7 @@ size_t GCodeSerial::write(uint8_t c)
     {
       ++lineNumber;
       checksum = 0;
-      emptyLine = false;      // do rhis firat to avoid infinite recursion
+      emptyLine = false;      // do this first to avoid infinite recursion
       write('N');
       print(lineNumber);
     }

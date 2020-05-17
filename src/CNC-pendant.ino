@@ -33,6 +33,21 @@ Nano    Duet
 +5V     +5V
 GND     GND
 TX1/D0  Through 6K8 resistor to URXD, also connect 10K resistor between URXD and GND
+
+To connect a PanelDue as well:
+
+PanelDue +5V to +5V
+PanelDue GND to GND
+PanelDue DIN to Duet UTXD or IO_0_OUT
+PanelDue DOUT to Nano RXD.
+
+It will probably be necessary to replace the 1K resistor between the USB interface chip by a 10K resistor so that PanelDiue can override the USB chip.
+On Arduino Nano clones with CH340G chip, there are 2 resistors next toi each other, close to pin 1 of the CH340G.
+The one closest to the chip is connected to pin 3 and is the one to replace
+
+Note, when using pass through the line numbers sent to the Duet won't follow a consistent sequence. It would be possible to fix this,
+however the Duet doesn't care about the line numbers anyway.
+
 */
 
 // Configuration constants
@@ -67,8 +82,10 @@ const char* const MoveCommands[] =
 
 #include "RotaryEncoder.h"
 #include "GCodeSerial.h"
+#include "PassThrough.h"
 
 RotaryEncoder encoder(PinA, PinB, PulsesPerClick);
+PassThrough passThrough;
 
 int serialBufferSize;
 int distanceMultiplier;
@@ -102,6 +119,16 @@ void setup()
   serialBufferSize = output.availableForWrite();
 }
 
+// Check for received data from PanelDue, store it in the pass through buffer, and send it if we have a complete command
+void checkPassThrough()
+{
+  unsigned int commandLength = passThrough.Check(Serial);
+  if (commandLength != 0 && Serial.availableForWrite() == serialBufferSize)
+  {
+    output.write(passThrough.GetCommand(), commandLength);
+  }
+}
+
 void loop()
 {
   // 0. Poll the encoder. Ideally we would do this in the tick ISR, but after all these years the Arduino core STILL doesn't let us hook it.
@@ -109,12 +136,22 @@ void loop()
   encoder.poll();
 
   // 1. Check for emergency stop
-  while (digitalRead(PinStop) == HIGH)
+  if (digitalRead(PinStop) == HIGH)
   {
-    output.write("M112 ;" "\xF0" "\x0F" "\n");
-    digitalWrite(PinLed, LOW);
-    delay(2000);
-    encoder.getChange();      // ignore any movement
+    // Send emergency stop command every 2 seconds
+    do
+    {
+      output.write("M112 ;" "\xF0" "\x0F" "\n");
+      digitalWrite(PinLed, LOW);
+      uint16_t now = (uint16_t)millis();
+      while (digitalRead(PinStop) == HIGH && (uint16_t)millis() - now < 2000)
+      {
+        checkPassThrough();
+      }
+      encoder.getChange();      // ignore any movement
+    } while (digitalRead(PinStop) == HIGH);
+
+    output.write("M999\n");
   }
 
   digitalWrite(PinLed, HIGH);
@@ -168,4 +205,8 @@ void loop()
       }
     }
   }
+
+  checkPassThrough();
 }
+
+// End

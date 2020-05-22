@@ -1,7 +1,7 @@
 // CNC pendant interface to Duet
 // D Crocker, started 2020-05-04
 
-/* Pendant to Arduino Nano connections:
+/* Pendant to Arduino Nano/Pro Micro connections:
 
 Nano    Pendant   Wire colours
 +5V     +5V       red
@@ -27,7 +27,7 @@ A0      STOP      blue
 NC      /A,       violet
         /B        violet/black
 
-Arduino Nano to Duet PanelDue connector connections:
+Arduino Nano/Pro Micro to Duet PanelDue connector connections:
 
 Nano    Duet
 +5V     +5V
@@ -39,15 +39,11 @@ To connect a PanelDue as well:
 PanelDue +5V to +5V
 PanelDue GND to GND
 PanelDue DIN to Duet UTXD or IO_0_OUT
-PanelDue DOUT to Nano RXD.
+PanelDue DOUT to Nano/Pro Micro RXD.
 
-It will probably be necessary to replace the 1K resistor between the USB interface chip by a 10K resistor so that PanelDiue can override the USB chip.
-On Arduino Nano clones with CH340G chip, there are 2 resistors next toi each other, close to pin 1 of the CH340G.
-The one closest to the chip is connected to pin 3 and is the one to replace
-
-Note, when using pass through the line numbers sent to the Duet won't follow a consistent sequence. It would be possible to fix this,
-however the Duet doesn't care about the line numbers anyway.
-
+If using an Arduino Nano, it is necessary to replace the 1K resistor between the USB interface chip by a 10K resistor so that PanelDiue can override the USB chip.
+On Arduino Nano clones with CH340G chip, it is also necessary to remove the RxD LED or its series resistor.
+These changes are not necessary if using the Arduino Pro Micro.
 */
 
 // Configuration constants

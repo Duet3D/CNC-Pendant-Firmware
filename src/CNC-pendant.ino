@@ -95,8 +95,14 @@ uint32_t whenLastCommandSent = 0;
 const int axisPins[] = { PinX, PinY, PinZ, PinAxis4, PinAxis5, PinAxis6 };
 const int feedAmountPins[] = { PinTimes1, PinTimes10, PinTimes100 };
 
+#if defined(__AVR_ATmega32U4__)     // Arduino Leonardo or Pro Micro
+# define UartSerial   Serial1
+#endif
+#if defined(__AVR_ATmega328P__)     // Arduino Uno or Nano
+# define UartSerial   Serial
+#endif
 
-GCodeSerial output(Serial);
+GCodeSerial output(UartSerial);
 
 void setup()
 {
@@ -122,8 +128,8 @@ void setup()
 // Check for received data from PanelDue, store it in the pass through buffer, and send it if we have a complete command
 void checkPassThrough()
 {
-  unsigned int commandLength = passThrough.Check(Serial);
-  if (commandLength != 0 && Serial.availableForWrite() == serialBufferSize)
+  unsigned int commandLength = passThrough.Check(UartSerial);
+  if (commandLength != 0 && UartSerial.availableForWrite() == serialBufferSize)
   {
     output.write(passThrough.GetCommand(), commandLength);
   }
@@ -133,6 +139,7 @@ void loop()
 {
   // 0. Poll the encoder. Ideally we would do this in the tick ISR, but after all these years the Arduino core STILL doesn't let us hook it.
   // We could possibly use interrupts instead, but if the encoder suffers from contact bounce then that isn't a good idea.
+  // In practice this loop executes fast enough that polling it here works well enough
   encoder.poll();
 
   // 1. Check for emergency stop

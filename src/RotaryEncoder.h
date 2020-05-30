@@ -5,12 +5,12 @@
 
 class RotaryEncoder
 {
-  unsigned int state;
+  uint8_t state;
   int pin0, pin1;
   int ppc;
   int change;
 
-  unsigned int readState()
+  uint8_t readState()
   {
     return (digitalRead(pin0) ? 1u : 0u) | (digitalRead(pin1) ? 2u : 0u);
   }

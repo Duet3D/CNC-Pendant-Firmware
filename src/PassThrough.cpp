@@ -22,7 +22,20 @@ unsigned int PassThrough::Check(HardwareSerial& serial)
 {
   while (state != State::haveCommand && serial.available() != 0)
   {
+#if defined(__AVR_ATmega32U4__)     // Arduino Micro, Pro Micro or Leonardo
+    RXLED0;                         // turn on receive LED
+#endif
     const char c = serial.read();
+#if defined(__AVR_ATmega32U4__)     // Arduino Micro, Pro Micro or Leonardo
+    if (c == '\r' || c == '\n')
+    {
+      RXLED1;                       // turn off receive LED
+    }
+    else
+    {
+      RXLED0;                       // turn on receive LED
+    }
+#endif
     switch (state)
     {
       case State::waitingForStart:

@@ -54,7 +54,7 @@ unsigned int PassThrough::Check(HardwareSerial& serial)
           break;
         }
         state = State::receivingCommand;
-        __attribute__ ((fallthrough));
+        //__attribute__ ((fallthrough));
       case State::receivingCommand:
         if (c == '*')
         {

@@ -1,3 +1,5 @@
+#include "Arduino.h"
+
 // CNC pendant interface to Duet
 // D Crocker, started 2020-05-04
 
@@ -96,9 +98,9 @@ const int PinB = 3;
 const int PinX = 4;
 const int PinY = 5;
 const int PinZ = 6;
-const int PinAxis4 = 7;
-const int PinAxis5 = 8;
-const int PinAxis6 = 9;
+const int PinU = 7;
+const int PinEnable = 14;
+const int PinPause = 15;
 const int PinStop = A0;
 
 #if defined(__AVR_ATmega32U4__)     // Arduino Micro, Pro Micro or Leonardo
@@ -126,9 +128,7 @@ const char* const MoveCommands[] =
   "G91 G0 F6000 X",     // X axis
   "G91 G0 F6000 Y",     // Y axis
   "G91 G0 F600 Z",      // Z axis
-  "G91 G0 F6000 U",     // axis 4
-  "G91 G0 F6000 V",     // axis 5
-  "G91 G0 F6000 W"      // axis 6
+  "G91 G0 F6000 U"
 };
 
 #include "RotaryEncoder.h"
@@ -143,7 +143,7 @@ int distanceMultiplier;
 int axis;
 uint32_t whenLastCommandSent = 0;
 
-const int axisPins[] = { PinX, PinY, PinZ, PinAxis4, PinAxis5, PinAxis6 };
+const int axisPins[] = {PinX, PinY, PinZ, PinU};
 const int feedAmountPins[] = { PinTimes1, PinTimes10, PinTimes100 };
 
 #if defined(__AVR_ATmega32U4__)     // Arduino Leonardo or Pro Micro
@@ -154,6 +154,8 @@ const int feedAmountPins[] = { PinTimes1, PinTimes10, PinTimes100 };
 
 GCodeSerial output(UartSerial);
 
+void bailOut();
+
 void setup()
 {
   pinMode(PinA, INPUT_PULLUP);
@@ -161,12 +163,12 @@ void setup()
   pinMode(PinX, INPUT_PULLUP);
   pinMode(PinY, INPUT_PULLUP);
   pinMode(PinZ, INPUT_PULLUP);
-  pinMode(PinAxis4, INPUT_PULLUP);
-  pinMode(PinAxis5, INPUT_PULLUP);
-  pinMode(PinAxis6, INPUT_PULLUP);
+  pinMode(PinU, INPUT_PULLUP);
   pinMode(PinTimes1, INPUT_PULLUP);
   pinMode(PinTimes10, INPUT_PULLUP);
   pinMode(PinTimes100, INPUT_PULLUP);
+  pinMode(PinEnable, INPUT_PULLUP);
+  pinMode(PinPause, INPUT_PULLUP);
   pinMode(PinStop, INPUT_PULLUP);
   pinMode(PinLed, OUTPUT);
 
@@ -189,6 +191,20 @@ void checkPassThrough()
   }
 }
 
+void discardPassThrough()
+{
+    passThrough.Check(UartSerial);
+    passThrough.GetCommand();
+}
+
+void bailOut()
+{
+    digitalWrite(PinLed, LOW);
+    // read all from pass through and discard
+    discardPassThrough();
+    encoder.getChange();
+}
+
 void loop()
 {
   // 0. Poll the encoder. Ideally we would do this in the tick ISR, but after all these years the Arduino core STILL doesn't let us hook it.
@@ -196,8 +212,8 @@ void loop()
   // In practice this loop executes fast enough that polling it here works well enough
   encoder.poll();
 
-  // 1. Check for emergency stop
-  if (digitalRead(PinStop) == HIGH)
+  // 1. Check for emergency stop (Normally Open, replace to HIGHs if using NC)
+  if (digitalRead(PinStop) == LOW)
   {
     // Send emergency stop command every 2 seconds
     do
@@ -205,17 +221,36 @@ void loop()
       output.write("M112 ;" "\xF0" "\x0F" "\n");
       digitalWrite(PinLed, LOW);
       uint16_t now = (uint16_t)millis();
-      while (digitalRead(PinStop) == HIGH && (uint16_t)millis() - now < 2000)
+      while (digitalRead(PinStop) == LOW && (uint16_t)millis() - now < 2000)
       {
         checkPassThrough();
       }
       encoder.getChange();      // ignore any movement
-    } while (digitalRead(PinStop) == HIGH);
+    } while (digitalRead(PinStop) == LOW);
 
     output.write("M999\n");
   }
 
-  digitalWrite(PinLed, HIGH);
+  // check if enabled
+  if (digitalRead(PinEnable) == LOW)
+  {
+      bailOut();
+      return;
+  }
+
+  // 2. Check for pause/resume  (Normally Open, replace to HIGHs if using NC)
+  if (digitalRead(PinPause) == LOW) {
+    digitalWrite(PinLed, LOW);
+    uint16_t now = (uint16_t) millis();
+    while (digitalRead(PinStop) == LOW && (uint16_t) millis() - now < 40) {
+        checkPassThrough();
+        encoder.getChange();      // ignore any movement
+    }
+
+    if (digitalRead(PinPause) == LOW) {
+      //output.write("M98 P\"pause_resume.g\"\n");
+    }
+  }
 
   // 2. Poll the feed amount switch
   distanceMultiplier = 0;
@@ -240,10 +275,17 @@ void loop()
       axis = localAxis;
       break;
     }
-    ++localAxis;    
+    ++localAxis;
   }
-  
-  // 5. If the serial output buffer is empty, send a G0 command for the accumulated encoder motion.
+  // 5th position is selected - for now let it turn off everything
+  if (axis == -1) {
+      bailOut();
+      return;
+  }
+
+  digitalWrite(PinLed, HIGH);
+
+    // 5. If the serial output buffer is empty, send a G0 command for the accumulated encoder motion.
   if (output.availableForWrite() == serialBufferSize)
   {
 #if defined(__AVR_ATmega32U4__)     // Arduino Micro, Pro Micro or Leonardo

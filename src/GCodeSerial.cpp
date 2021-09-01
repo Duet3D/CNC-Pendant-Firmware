@@ -13,8 +13,8 @@ size_t GCodeSerial::write(uint8_t c)
   {
     if (!emptyLine)
     {
-      writeRaw('*');
-      print(checksum);
+      serial.write('*');
+      serial.print(checksum);
       emptyLine = true;
     }
   }
@@ -24,13 +24,13 @@ size_t GCodeSerial::write(uint8_t c)
     {
       ++lineNumber;
       checksum = 0;
-      emptyLine = false;      // do this first to avoid infinite recursion
-      write('N');
-      print(lineNumber);
+      emptyLine = false;
+      serial.write('N');
+      serial.print(lineNumber);
     }
     checksum ^= c;
   }
-  writeRaw(c);
+  serial.write(c);
   return 1;
 }
 

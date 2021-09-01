@@ -31,7 +31,7 @@ A3        X100      orange
 NC        /A,       violet
           /B        violet/black
 
-Arduino Nano to Duet PanelDue connector connections:
+*** Arduino Pro Micro to Duet PanelDue connector connections ***
 
 Pro Micro Duet
 VCC       +5V
@@ -71,7 +71,7 @@ A0      STOP      blue
 NC      /A,       violet
         /B        violet/black
 
-Arduino Nano to Duet PanelDue connector connections:
+*** Arduino Nano to Duet PanelDue connector connections ***
 
 Nano    Duet
 +5V     +5V

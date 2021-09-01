@@ -11,7 +11,6 @@ public:
 
   void begin(unsigned long baud);
   size_t write(uint8_t) override;
-  void writeRaw(uint8_t c) { serial.write(c); }
   int availableForWrite() override { return serial.availableForWrite(); }
   using Print::write;
 

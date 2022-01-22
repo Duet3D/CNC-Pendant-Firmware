@@ -48,3 +48,6 @@ PanelDue DOUT to Arduino RX0 (blue wire of PanelDuet cable to green wire of pend
 
 For wiring differences and hardware changes needed if using an Arduino Nano, see the comments at the start of the CNC-pendant.ino file.
 
+## Support requests
+
+Please use the [forum](https://forum.duet3d.com) for support requests.

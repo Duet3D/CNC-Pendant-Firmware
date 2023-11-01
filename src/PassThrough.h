@@ -2,6 +2,7 @@
 #define PASSTHROUGH_H_INCLUDED
 
 #include "Arduino.h"
+#include "CRC16.h"
 
 // Class to accumulate commands received from PanelDue to be passed through
 class PassThrough
@@ -19,13 +20,15 @@ private:
     receivingLineNumber,
     receivingCommand,
     receivingQuotedString,
-    receivingChecksum,
+    receivingChecksumOrCrc,
     haveCommand
   };
 
   uint8_t count = 0;
-  uint8_t actualChecksum;
-  uint8_t receivedChecksum;
+  uint8_t checksumCharacters;
+  uint8_t computedChecksum;
+  CRC16 computedCrc;
+  uint16_t receivedChecksumOrCrc;
   State state = State::waitingForStart;
   bool overflowed;
   char buffer[100];

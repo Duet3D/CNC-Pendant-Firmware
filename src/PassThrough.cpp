@@ -1,9 +1,10 @@
 #include "PassThrough.h"
 
-// Store character and add to checksum. If no room, we will discover that when we try to append the newline, so no need to record overflow here.
+// Store character and add to checksum and CRC. If no room, we will discover that when we try to append the newline, so no need to record overflow here.
 void PassThrough::StoreAndAddToChecksum(char c)
 {
-  actualChecksum ^= c;
+  computedChecksum ^= c;
+  computedCrc.Update(c);
   if (count < sizeof(buffer)/sizeof(buffer[0]))
   {
     buffer[count++] = c;
@@ -42,8 +43,10 @@ unsigned int PassThrough::Check(HardwareSerial& serial)
         if (c == 'N')
         {
           state = State::receivingLineNumber;
-          actualChecksum = c;
+          computedChecksum = 0;
+          computedCrc.Reset(0);
           count = 0;
+          StoreAndAddToChecksum(c);
         }
         break;
 
@@ -58,8 +61,9 @@ unsigned int PassThrough::Check(HardwareSerial& serial)
       case State::receivingCommand:
         if (c == '*')
         {
-          state = State::receivingChecksum;
-          receivedChecksum = 0;
+          state = State::receivingChecksumOrCrc;
+          receivedChecksumOrCrc = 0;
+          checksumCharacters = 0;
           break;
         }
         if (c == '\n' || c == '\r')
@@ -87,7 +91,7 @@ unsigned int PassThrough::Check(HardwareSerial& serial)
         StoreAndAddToChecksum(c);
         break;
 
-      case State::receivingChecksum:
+      case State::receivingChecksumOrCrc:
         if (c == '\n' || c == '\r')
         {
           if (count == sizeof(buffer)/sizeof(buffer[0]))    // if buffer too small for the command
@@ -96,11 +100,15 @@ unsigned int PassThrough::Check(HardwareSerial& serial)
             break;
           }
           buffer[count++] = '\n';
-          state = (receivedChecksum == actualChecksum) ? State::haveCommand : State::waitingForStart;
+          state = (   (checksumCharacters >= 1 && checksumCharacters <= 3 && receivedChecksumOrCrc == computedChecksum)
+                   || (checksumCharacters == 5 && receivedChecksumOrCrc == computedCrc.Get())
+                  )
+                  ? State::haveCommand : State::waitingForStart;
         }
-        else if (c >= '0' && c <= '9')
+        else if (c >= '0' && c <= '9' && checksumCharacters < 5)
         {
-          receivedChecksum = (10 * receivedChecksum) + (c - '0');
+          receivedChecksumOrCrc = (10 * receivedChecksumOrCrc) + (c - '0');
+          ++checksumCharacters;
         }
         else
         {

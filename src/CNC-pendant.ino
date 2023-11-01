@@ -2,8 +2,8 @@
 // D Crocker, started 2020-05-04
 
 /* This Arduino sketch can be run on either Arduino Nano or Arduino Pro Micro. 
- * It should alo work on an Arduino Uno (using the same wiring scheme as for the Nano) or Arduino Leonardo (using the same wiring scheme as for the Pro Micro).
- * The recommended board is the Arduino Pro Micro because the passthrough works without any modificatoins to the Arduino. 
+ * It should also work on an Arduino Uno (using the same wiring scheme as for the Nano) or Arduino Leonardo (using the same wiring scheme as for the Pro Micro).
+ * The recommended board is the Arduino Pro Micro because the passthrough works without any modifications to the Arduino. 
 
 *** Pendant to Arduino Pro Micro connections ***
 

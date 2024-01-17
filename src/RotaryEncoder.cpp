@@ -1,5 +1,4 @@
 #include "RotaryEncoder.h"
-#include "arduino.h"
 
 void RotaryEncoder::init()
 {

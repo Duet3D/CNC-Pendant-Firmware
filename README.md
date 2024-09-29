@@ -4,7 +4,7 @@ This is firmware to run on an Arduino Pro Micro (preferred) or Arduino Nano to i
 
 The code on the master branch send commands with checksums to RRF, suitable for older versions RRF. If you use the PanelDue pass-through facility then you need to use an older version of PanelDueFirmware that uses checksums, because it does not recognise CRCs from PanelDue.
 
-The code on the crc16 sends commands with CRC to RRF with a CRC instead. This works with newer versions of RRF and provides better integrity protection. If the PanelDue pass-through facility is used, it accepts either CRCs or checksums from PanelDue.
+The code on the crc16 branch sends commands with CRC to RRF with a CRC instead. This works with newer versions of RRF and provides better integrity protection. If the PanelDue pass-through facility is used, it accepts either CRCs or checksums from PanelDue.
 
 For a full guide to building the pendant, see [the Duet3D wiki here](https://docs.duet3d.com/en/User_manual/Connecting_hardware/IO_CNC_Pendant).
 

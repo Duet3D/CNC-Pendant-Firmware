@@ -215,8 +215,6 @@ void loop()
     output.write("M999\n");
   }
 
-  digitalWrite(PinLed, HIGH);
-
   // 2. Poll the feed amount switch
   distanceMultiplier = 0;
   int localDistanceMultiplier = 1;
@@ -241,6 +239,56 @@ void loop()
       break;
     }
     ++localAxis;    
+  }
+
+  static uint32_t ledTimer = 0;
+  static bool ledState = false;
+  static uint32_t morseEndTime = 0;
+  static bool morseActive = false;
+  const uint32_t ledOnTime = 10;    // ms LED ON when axis selected
+  const uint32_t ledOffTime = 50;   // ms LED OFF when axis selected
+  const uint32_t morseOnTime = 10;   // ms LED ON for Morse mode (twice as fast)
+  const uint32_t morseOffTime = 25; // ms LED OFF for Morse mode (twice as fast)
+  uint32_t now = millis();
+
+  if (morseActive && now < morseEndTime) {
+    // Morse-like flashing
+    if (ledState) {
+      if (now - ledTimer >= morseOnTime) {
+        digitalWrite(PinLed, LOW);
+        ledState = false;
+        ledTimer = now;
+      }
+    } else {
+      if (now - ledTimer >= morseOffTime) {
+        digitalWrite(PinLed, HIGH);
+        ledState = true;
+        ledTimer = now;
+      }
+    }
+  } else {
+    morseActive = false;
+    if (axis == -1) {
+      // No axis selected, keep LED ON
+      digitalWrite(PinLed, HIGH);
+      ledState = true;
+      ledTimer = now;
+    } else {
+      // Axis selected, flicker LED using software PWM
+      if (ledState) {
+        if (now - ledTimer >= ledOnTime) {
+          digitalWrite(PinLed, LOW);
+          ledState = false;
+          ledTimer = now;
+        }
+      } else {
+        if (now - ledTimer >= ledOffTime) {
+          digitalWrite(PinLed, HIGH);
+          ledState = true;
+          ledTimer = now;
+        }
+      }
+    }
   }
   
   // 5. If the serial output buffer is empty, send a G0 command for the accumulated encoder motion.
@@ -269,6 +317,9 @@ void loop()
         output.write('.');
         output.print(distance % 10);
         output.write('\n');
+        // Morse-like LED flash for 100ms after move command (adjust duration as needed)
+        morseActive = true;
+        morseEndTime = millis() + 100;
       }
     }
   }
